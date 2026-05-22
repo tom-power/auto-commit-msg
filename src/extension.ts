@@ -59,6 +59,20 @@ async function _handleRepos(
  * Return a repo for single repo in the workspace.
  */
 async function _handleRepo(git: API): Promise<Repository> {
+  const activeEditor = vscode.window.activeTextEditor;
+  if (activeEditor) {
+    const repo = git.getRepository(activeEditor.document.uri);
+    if (repo) return repo;
+  }
+
+  const workspaceFolders = vscode.workspace.workspaceFolders;
+  if (workspaceFolders && workspaceFolders.length > 0) {
+    for (const folder of workspaceFolders) {
+      const repo = git.getRepository(folder.uri);
+      if (repo) return repo;
+    }
+  }
+
   return git.repositories[0];
 }
 
