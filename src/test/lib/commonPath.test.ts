@@ -8,6 +8,7 @@ import {
   _allElementsEqual,
   _splitStrings,
   commonPath,
+  mostCommonParent,
 } from "../../lib/commonPath";
 
 describe("Split an array of strings at a separator", function () {
@@ -90,6 +91,58 @@ describe("Find the highest common parent directory for paths", function () {
       ];
 
       assert.strictEqual(commonPath(paths), "/home/user1/tmp");
+    });
+  });
+});
+
+describe("Find the most common parent directory for paths", function () {
+  describe("#mostCommonParent", function () {
+    it("returns the deepest path when all share the same parent", function () {
+      const paths = [
+        "src/fizz/buzz/foo.md",
+        "src/fizz/bazz/bar.md",
+      ];
+      assert.strictEqual(mostCommonParent(paths), "src/fizz");
+    });
+
+    it("returns the path with the highest count", function () {
+      const paths = [
+        "src/fizz/buzz/foo.md",
+        "src/fizz/bazz/bar.md",
+        "src/fizz/bazz/baz.md",
+        "src/todo.md",
+      ];
+
+      assert.strictEqual(mostCommonParent(paths), "src");
+    });
+
+    it("returns undefined when files are all at the repo root", function () {
+      const paths = ["foo.txt", "bar.txt"];
+
+      assert.strictEqual(mostCommonParent(paths), undefined);
+    });
+
+    it("prefers higher count, then deeper on tie", function () {
+      const paths = [
+        "a/b/c/d/foo",
+        "a/b/c/d/bar",
+        "a/b/baz",
+        "a/b/fizz",
+      ];
+
+      assert.strictEqual(mostCommonParent(paths), "a/b");
+    });
+
+    it("handles a single file by returning undefined", function () {
+      const paths = ["foo/bar.txt"];
+
+      assert.strictEqual(mostCommonParent(paths), undefined);
+    });
+
+    it("returns the top-level directory when files share only that", function () {
+      const paths = ["src/foo.txt", "src/bar.txt", "lib/baz.txt"];
+
+      assert.strictEqual(mostCommonParent(paths), "src");
     });
   });
 });

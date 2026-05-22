@@ -1,6 +1,17 @@
 {
   "files.exclude": {
-    "out": false
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true,
+    ".idea": true,
+    ".venv": true,
+    "**/__pycache__": true,
+    "**/.mypy_cache": true,
+    "**/.pytest_cache": true,
+    "node_modules": true,
+    "out": true
   },
   "search.exclude": {
     "out": true
@@ -17,4 +28,5 @@
   "prettier.tabWidth": 2,
 
   "grammarly.autoActivate": true,
+  "hide-files.files": [],
 }

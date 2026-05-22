@@ -2,7 +2,7 @@
  * Map Git status short symbols to a long description.
  */
 // Use file names up to a point and after than using file counts.
-export const AGGREGATE_MIN = 5;
+export const AGGREGATE_MIN = 2;
 
 // Human-friendly description of path, for use in commit messages.
 export const ROOT = "repo root";

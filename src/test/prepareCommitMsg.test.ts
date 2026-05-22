@@ -382,7 +382,7 @@ describe("Prepare commit message", function () {
       it("handles a single file change", function () {
         const lines = ["A\tbaz.txt"];
         const expected = {
-          typePrefix: CONVENTIONAL_TYPE.UNKNOWN,
+          typePrefix: CONVENTIONAL_TYPE.FEAT,
           description: "create 1 file",
         };
 
@@ -391,11 +391,8 @@ describe("Prepare commit message", function () {
     });
 
     describe("multiple files", function () {
-      describe("multiple files with the same action", function () {
-        // Don't need to distinguish between a few or many files as as it
-        // supposed to work the same.
-
-        it("handles 2 created files created correctly", function () {
+      describe("multiple files with the same action at root", function () {
+        it("handles 5 created files at root correctly", function () {
           const lines = [
             "A\tfoo.txt",
             "A\tbar.txt",
@@ -404,30 +401,14 @@ describe("Prepare commit message", function () {
             "A\tbuzz.txt",
           ];
           const expected = {
-            typePrefix: CONVENTIONAL_TYPE.UNKNOWN,
+            typePrefix: CONVENTIONAL_TYPE.FEAT,
             description: "create 5 files",
           };
 
           assert.deepStrictEqual(_msgCount(lines), expected);
         });
 
-        it("handles 5 created files created correctly", function () {
-          const lines = [
-            "A\tfoo.txt",
-            "A\tbar.txt",
-            "A\tbazz.txt",
-            "A\tfizz.txt",
-            "A\tbuzz.txt",
-          ];
-          const expected = {
-            typePrefix: CONVENTIONAL_TYPE.UNKNOWN,
-            description: "create 5 files",
-          };
-
-          assert.deepStrictEqual(_msgCount(lines), expected);
-        });
-
-        it("handles 5 modified files correctly", function () {
+        it("handles 5 modified files at root correctly", function () {
           const lines = [
             "M\tfoo.txt",
             "M\tbar.txt",
@@ -438,6 +419,65 @@ describe("Prepare commit message", function () {
           const expected = {
             typePrefix: CONVENTIONAL_TYPE.UNKNOWN,
             description: "update 5 files",
+          };
+
+          assert.deepStrictEqual(_msgCount(lines), expected);
+        });
+      });
+
+      describe("multiple files with a common parent", function () {
+        it("handles 2 modified files with common parent", function () {
+          const lines = ["M\tsrc/fizz/foo.txt", "M\tsrc/fizz/bar.txt"];
+          const expected = {
+            typePrefix: CONVENTIONAL_TYPE.UNKNOWN,
+            description: "update fizz",
+          };
+
+          assert.deepStrictEqual(_msgCount(lines), expected);
+        });
+
+        it("uses the deepest common parent shared by the most files", function () {
+          const lines = [
+            "M\tsrc/fizz/buzz/foo.md",
+            "M\tsrc/fizz/bazz/bar.md",
+            "M\tsrc/fizz/bazz/baz.md",
+            "M\tsrc/todo.md",
+          ];
+          const expected = {
+            typePrefix: CONVENTIONAL_TYPE.UNKNOWN,
+            description: "update fizz",
+          };
+
+          assert.deepStrictEqual(_msgCount(lines), expected);
+        });
+
+        it("handles files where broader parent beats a deeper one", function () {
+          const lines = [
+            "M\tfizz/buzz/foo.md",
+            "M\tfizz/bazz/bar.md",
+            "M\tfizz/bazz/baz.md",
+            "M\tfizz/bazz/fizz.md",
+            "M\tfizz/bazz/buzz.md",
+            "M\tfizz/bazz/qux.md",
+            "M\ttodo.md",
+          ];
+          const expected = {
+            typePrefix: CONVENTIONAL_TYPE.UNKNOWN,
+            description: "update fizz",
+          };
+
+          assert.deepStrictEqual(_msgCount(lines), expected);
+        });
+
+        it("handles 3 created files with common parent", function () {
+          const lines = [
+            "A\tsrc/foo/bar.md",
+            "A\tsrc/foo/baz.md",
+            "A\tsrc/foo/fizz.md",
+          ];
+          const expected = {
+            typePrefix: CONVENTIONAL_TYPE.FEAT,
+            description: "create foo",
           };
 
           assert.deepStrictEqual(_msgCount(lines), expected);
@@ -505,52 +545,32 @@ describe("Prepare commit message", function () {
     });
 
     describe("a few files", function () {
-      describe("multiple files with the same action", function () {
-        it("handles 2 created files created correctly", function () {
+      describe("multiple files with the same action and no common parent", function () {
+        it("handles 2 created files at root correctly", function () {
           const lines = ["A\tbaz.txt", "A\tbar.js"];
           const expected = {
             typePrefix: CONVENTIONAL_TYPE.FEAT,
-            description: "create baz.txt and bar.js",
+            description: "create 2 files",
           };
 
           assert.deepStrictEqual(_msgFromChanges(lines), expected);
         });
 
-        it("handles 2 modified files correctly", function () {
+        it("handles 2 modified files at root correctly", function () {
           const lines = ["M\tbaz.txt", "M\tbar.js"];
           const expected = {
             typePrefix: CONVENTIONAL_TYPE.UNKNOWN,
-            description: "update baz.txt and bar.js",
+            description: "update 2 files",
           };
 
           assert.deepStrictEqual(_msgFromChanges(lines), expected);
         });
 
-        it("handles 3 files with the same action correctly", function () {
-          const lines = ["A\tbaz.txt", "A\tbar.js", "A\tfizz/fuzz.md"];
-          const expected = {
-            typePrefix: CONVENTIONAL_TYPE.FEAT,
-            description: "create baz.txt, bar.js and fuzz.md",
-          };
-
-          assert.deepStrictEqual(_msgFromChanges(lines), expected);
-        });
-
-        it("handles 4 files with the same action correctly", function () {
+        it("handles 4 files at root correctly", function () {
           const lines = ["A\tbaz.txt", "A\tbar.js", "A\tfuzz.md", "A\tfuzz.ts"];
           const expected = {
             typePrefix: CONVENTIONAL_TYPE.FEAT,
-            description: "create baz.txt, bar.js, fuzz.md and fuzz.ts",
-          };
-
-          assert.deepStrictEqual(_msgFromChanges(lines), expected);
-        });
-
-        it("handles 3 files in subdirectories but does not show the directory paths", function () {
-          const lines = ["A\tbaz.txt", "A\tfizz/bar.js", "A\tfizz/fuzz.md"];
-          const expected = {
-            typePrefix: CONVENTIONAL_TYPE.FEAT,
-            description: "create baz.txt, bar.js and fuzz.md",
+            description: "create 4 files",
           };
 
           assert.deepStrictEqual(_msgFromChanges(lines), expected);
@@ -561,13 +581,13 @@ describe("Prepare commit message", function () {
           const lines = ["M\tpackage.json", "M\tpackage-lock.json"];
           const expected = {
             typePrefix: CONVENTIONAL_TYPE.BUILD_DEPENDENCIES,
-            description: "update package.json and package-lock.json",
+            description: "update 2 files",
           };
 
           assert.deepStrictEqual(_msgFromChanges(lines), expected);
         });
 
-        it("handles 3 README.md files in different locations as full paths", function () {
+        it("handles 3 README.md files in different locations", function () {
           const lines = [
             "M\tdocs/README.md",
             "M\tbar/README.md",
@@ -575,7 +595,34 @@ describe("Prepare commit message", function () {
           ];
           const expected = {
             typePrefix: CONVENTIONAL_TYPE.DOCS,
-            description: "update docs/README.md, bar/README.md and README.md",
+            description: "update 3 files",
+          };
+
+          assert.deepStrictEqual(_msgFromChanges(lines), expected);
+        });
+      });
+
+      describe("multiple files with a common parent directory", function () {
+        it("handles 3 files in subdirectories using common parent", function () {
+          const lines = ["A\tbaz.txt", "A\tfizz/bar.js", "A\tfizz/fuzz.md"];
+          const expected = {
+            typePrefix: CONVENTIONAL_TYPE.FEAT,
+            description: "create fizz",
+          };
+
+          assert.deepStrictEqual(_msgFromChanges(lines), expected);
+        });
+
+        it("handles files at different depths using deepest common parent", function () {
+          const lines = [
+            "M\tsrc/fizz/buzz/foo.md",
+            "M\tsrc/fizz/bazz/bar.md",
+            "M\tsrc/fizz/bazz/baz.md",
+            "M\tsrc/todo.md",
+          ];
+          const expected = {
+            typePrefix: CONVENTIONAL_TYPE.UNKNOWN,
+            description: "update fizz",
           };
 
           assert.deepStrictEqual(_msgFromChanges(lines), expected);
@@ -617,7 +664,7 @@ describe("Prepare commit message", function () {
             "A\tbuzz.txt",
           ];
           const expected = {
-            typePrefix: CONVENTIONAL_TYPE.UNKNOWN,
+            typePrefix: CONVENTIONAL_TYPE.FEAT,
             description: "create 5 files",
           };
 
@@ -722,32 +769,25 @@ describe("Prepare commit message", function () {
       });
 
       describe("multiple changes", function () {
-        // Leave the detailed cases to tests for `_msgFromChanges`.
-        const lines = ["A\tbaz.txt", "A\tbar.js"];
-        const expected = "feat: create baz.txt and bar.js";
-
-        it("handles 2 created files", function () {
-          assert.strictEqual(_newMsg(lines), expected);
+        it("handles 2 created files at root", function () {
+          const lines = ["A\tbaz.txt", "A\tbar.js"];
+          assert.strictEqual(_newMsg(lines), "feat: create 2 files");
         });
 
-        it("handles 3 created files", function () {
-          const lines = ["A\tbaz.txt", "A\tbar.js", "A\tfizz/fuzz.md"];
-          const expected = "feat: create baz.txt, bar.js and fuzz.md";
-
-          assert.strictEqual(_newMsg(lines), expected);
+        it("handles 3 created files with common parent", function () {
+          const lines = ["A\tbaz.txt", "A\tfizz/bar.js", "A\tfizz/fuzz.md"];
+          assert.strictEqual(_newMsg(lines), "feat: create fizz");
         });
 
-        it("handles 3 created docs", function () {
+        it("handles 3 changed docs with no common parent", function () {
           {
             const lines = [
               "M\tdocs/README.md",
               "M\tbar/README.md",
               "M\tREADME.md",
             ];
-            const expected =
-              "docs: update docs/README.md, bar/README.md and README.md";
 
-            assert.strictEqual(_newMsg(lines), expected);
+            assert.strictEqual(_newMsg(lines), "docs: update 3 files");
           }
 
           {
@@ -756,10 +796,8 @@ describe("Prepare commit message", function () {
               "M\tbar/README.md",
               "M\tREADME.md",
             ];
-            const expected =
-              "docs: update 'fizz buzz.md', bar/README.md and README.md";
 
-            assert.strictEqual(_newMsg(lines), expected);
+            assert.strictEqual(_newMsg(lines), "docs: update 3 files");
           }
         });
       });
@@ -1506,7 +1544,7 @@ describe("Prepare commit message", function () {
 
       assert.strictEqual(
         _generateMsgWithOld(fileChanges, oldMsg),
-        "update baz.txt and bar.js my old message",
+        "update 2 files my old message",
       );
     });
 
@@ -1518,23 +1556,23 @@ describe("Prepare commit message", function () {
   });
 
   describe("#generateMsg", function () {
-    const fileChanges = ["M\tbaz.txt", "M\tbar.js"];
-
-    it("handles a set old message", function () {
+    it("handles 2 modified root files with a set old message", function () {
+      const fileChanges = ["M\tbaz.txt", "M\tbar.js"];
       const oldMsg = "my old message";
 
       assert.strictEqual(
         generateMsg(fileChanges, oldMsg),
-        "update baz.txt and bar.js my old message",
+        "update 2 files my old message",
       );
     });
 
-    it("handles an empty old message", function () {
+    it("handles 2 modified root files with an empty old message", function () {
+      const fileChanges = ["M\tbaz.txt", "M\tbar.js"];
       const oldMsg = "";
 
       assert.strictEqual(
         generateMsg(fileChanges, oldMsg),
-        "update baz.txt and bar.js",
+        "update 2 files",
       );
     });
 
@@ -1558,23 +1596,23 @@ describe("Prepare commit message", function () {
       );
     });
 
-    it("handles multiple file changes with a set old message", function () {
+    it("handles 3 modified root files with a set old message", function () {
       const multipleFileChanges = ["M\tbaz.txt", "M\tbar.js", "M\tfoo.txt"];
       const oldMsg = "my old message";
 
       assert.strictEqual(
         generateMsg(multipleFileChanges, oldMsg),
-        "update baz.txt, bar.js and foo.txt my old message",
+        "update 3 files my old message",
       );
     });
 
-    it("handles multiple file changes with an empty old message", function () {
+    it("handles 3 modified root files with an empty old message", function () {
       const multipleFileChanges = ["M\tbaz.txt", "M\tbar.js", "M\tfoo.txt"];
       const oldMsg = "";
 
       assert.strictEqual(
         generateMsg(multipleFileChanges, oldMsg),
-        "update baz.txt, bar.js and foo.txt",
+        "update 3 files",
       );
     });
 

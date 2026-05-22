@@ -6,7 +6,7 @@
  * prefix.
  */
 import * as assert from "assert";
-import { namedFilesDesc, oneChange } from "../../generate/message";
+import { commonPathDesc, namedFilesDesc, oneChange } from "../../generate/message";
 
 describe("Generate commit message for a single changed file", function () {
   // Notes:
@@ -244,6 +244,57 @@ describe("Generate description for a few changed files which each get named", fu
         ]),
         "update 1 file and delete 1 file",
       );
+    });
+  });
+});
+
+describe("Generate description using the most common parent directory", function () {
+  describe("#commonPathDesc", function () {
+    it("uses the most common parent directory for a set of modified files", function () {
+      const changes = [
+        { x: "A", from: "src/fizz/buzz/foo.md", y: " ", to: "" },
+        { x: "M", from: "src/fizz/bazz/bar.md", y: " ", to: "" },
+        { x: "D", from: "src/fizz/bazz/baz.md", y: " ", to: "" },
+      ];
+      assert.strictEqual(commonPathDesc(changes), "update fizz");
+    });
+
+    it("uses 'create' when all files are new", function () {
+      const changes = [
+        { x: "A", from: "src/foo/bar.md", y: " ", to: "" },
+        { x: "A", from: "src/foo/baz.md", y: " ", to: "" },
+        { x: "A", from: "src/foo/fizz.md", y: " ", to: "" },
+      ];
+
+      assert.strictEqual(commonPathDesc(changes), "create foo");
+    });
+
+    it("uses 'update' as default verb when actions are mixed", function () {
+      const changes = [
+        { x: "M", from: "src/fizz/buzz/foo.md", y: " ", to: "" },
+        { x: "M", from: "src/fizz/bazz/bar.md", y: " ", to: "" },
+        { x: "M", from: "src/fizz/bazz/baz.md", y: " ", to: "" },
+      ];
+      assert.strictEqual(commonPathDesc(changes), "update fizz");
+    });
+
+    it("returns undefined when no common parent is found", function () {
+      const changes = [
+        { x: "M", from: "foo.txt", y: " ", to: "" },
+        { x: "M", from: "bar.txt", y: " ", to: "" },
+      ];
+
+      assert.strictEqual(commonPathDesc(changes), undefined);
+    });
+
+    it("returns undefined when only common parent is an excluded segment", function () {
+      const changes = [
+        { x: "M", from: "src/foo.txt", y: " ", to: "" },
+        { x: "M", from: "src/bar.txt", y: " ", to: "" },
+        { x: "M", from: "lib/baz.txt", y: " ", to: "" },
+      ];
+
+      assert.strictEqual(commonPathDesc(changes), undefined);
     });
   });
 });

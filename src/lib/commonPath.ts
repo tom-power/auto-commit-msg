@@ -63,3 +63,50 @@ export function commonPath(input: string[], sep = "/"): string {
 
   return common === "" ? ROOT : common;
 }
+
+/**
+ * Find the most common parent directory among a set of paths.
+ *
+ * For each path, all ancestor directories are collected and counted. The
+ * directory shared by the most paths is returned, preferring the deepest
+ * (most specific) path in case of ties.
+ *
+ * An optional set of last-segment names to exclude can be provided (e.g.
+ * to skip trivial root directories like "src").
+ *
+ * Returns undefined if no common parent exists beyond the repo root.
+ */
+export function mostCommonParent(
+  input: string[],
+  sep = "/",
+  exclude: string[] = [],
+): string | undefined {
+  const counts = new Map<string, number>();
+
+  for (const item of input) {
+    const parts = item.split(sep);
+    let current = "";
+    for (let i = 0; i < parts.length - 1; i++) {
+      current = current ? `${current}${sep}${parts[i]}` : parts[i];
+      counts.set(current, (counts.get(current) || 0) + 1);
+    }
+  }
+
+  let bestPath: string | undefined;
+  let bestCount = 0;
+  let bestDepth = 0;
+
+  for (const [dir, count] of counts) {
+    if (count < 2) continue;
+    const lastSegment = dir.split(sep).pop()!;
+    if (exclude.includes(lastSegment)) continue;
+    const depth = dir.split(sep).length;
+    if (count > bestCount || (count === bestCount && depth > bestDepth)) {
+      bestPath = dir;
+      bestCount = count;
+      bestDepth = depth;
+    }
+  }
+
+  return bestPath;
+}

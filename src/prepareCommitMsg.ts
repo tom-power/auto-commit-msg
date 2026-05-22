@@ -13,7 +13,7 @@
 import { lookupDiffIndexAction } from "./generate/action";
 import { getConventionType } from "./generate/convCommit";
 import { countFilesDesc } from "./generate/count";
-import { namedFilesDesc, oneChange } from "./generate/message";
+import { commonPathDesc, namedFilesDesc, oneChange } from "./generate/message";
 import { splitMsg } from "./generate/parseExisting";
 import { MsgPieces } from "./generate/parseExisting.d";
 import { parseDiffIndex } from "./git/parseOutput";
@@ -128,12 +128,13 @@ export function _msgNamed(lines: string[]): ConvCommitMsg {
  *   e.g. ["A    baz.txt"]
  */
 export function _msgCount(lines: string[]): ConvCommitMsg {
-  const prefix = CONVENTIONAL_TYPE.UNKNOWN;
+  const conventions = lines.map(_prefixFromChange);
+  const typePrefix = _collapse(conventions);
 
   const changes = lines.map(parseDiffIndex);
-  const description = countFilesDesc(changes);
+  const description = commonPathDesc(changes) ?? countFilesDesc(changes);
 
-  return { typePrefix: prefix, description };
+  return { typePrefix, description };
 }
 
 /**
